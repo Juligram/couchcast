@@ -1,0 +1,41 @@
+name: Build Couchcast app
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unpack the project
+        run: unzip -q -o couchcast-project.zip
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Build the app
+        run: bash ci/build.sh
+
+      - name: Publish the app
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash ci/publish.sh
+
+      - name: Save the build log
+        if: always()
+        env:
+          STATUS: ${{ job.status }}
+        run: bash ci/savelog.sh
